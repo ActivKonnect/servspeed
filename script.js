@@ -195,7 +195,6 @@
         jr.start().then(function (res) {
             var speeds = [],
                 latencies = [],
-                allChunks = [],
                 speedStats,
                 pingStats,
                 data;
@@ -210,7 +209,6 @@
 
                 chunks = out.args[0];
                 speed = findNTile(0.9, chunksToSpeeds(chunks));
-                allChunks.push(chunks);
 
                 if (speed && speed !== Infinity) {
                     speeds.push(speed);
@@ -234,12 +232,8 @@
             data = {
                 speeds: speeds,
                 pings: latencies,
-                chunks: allChunks.map(function (c) {
-                    return c.map(function (x) {
-                        x.date = x.date.getTime();
-                        return x;
-                    });
-                })
+                pingStats: pingStats,
+                speedStats: speedStats
             };
 
             post('writer.php', {
