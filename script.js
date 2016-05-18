@@ -76,7 +76,7 @@
             }
 
             req = new XMLHttpRequest();
-            req.open("GET", url);
+            req.open("GET", url + '?' + (new Date()).getTime());
             req.overrideMimeType("text/plain; charset=x-user-defined");
 
             req.addEventListener('progress', handleProgress);
@@ -90,6 +90,28 @@
                 date: new Date(),
                 loaded: 0
             });
+        });
+    }
+
+    function post(url, data) {
+        return new Promise(function (resolve, reject) {
+            var req = new XMLHttpRequest(),
+                dataParts = [];
+            req.open('POST', url, true);
+            req.setRequestHeader(
+                'Content-Type',
+                'application/x-www-form-urlencoded; charset=UTF-8'
+            );
+
+            req.addEventListener('load', resolve);
+            req.addEventListener('error', reject);
+            req.addEventListener('abort', reject);
+
+            Object.keys(data).forEach(function (k) {
+                dataParts.push(encodeURIComponent(k) + '=' + encodeURIComponent(data[k]));
+            });
+
+            req.send(dataParts.join('&'));
         });
     }
 
@@ -173,8 +195,10 @@
         jr.start().then(function (res) {
             var speeds = [],
                 latencies = [],
+                allChunks = [],
                 speedStats,
-                pingStats;
+                pingStats,
+                data;
 
             res.forEach(function (out) {
                 var chunks,
@@ -186,6 +210,7 @@
 
                 chunks = out.args[0];
                 speed = findNTile(0.9, chunksToSpeeds(chunks));
+                allChunks.push(chunks);
 
                 if (speed && speed !== Infinity) {
                     speeds.push(speed);
@@ -205,16 +230,23 @@
                 speed: speedStats,
                 ping: pingStats
             });
+
+            data = {
+                speeds: speeds,
+                pings: latencies,
+                chunks: allChunks.map(function (c) {
+                    return c.map(function (x) {
+                        x.date = x.date.getTime();
+                        return x;
+                    });
+                })
+            };
+
+            post('writer.php', {
+                data: JSON.stringify(data)
+            });
         });
     }
-
-    //download('files/10M.dat').then(function (chunks) {
-    //    var speed = chunksToSpeeds(chunks);
-    //
-    //    console.log(chunks);
-    //    console.log(speed);
-    //    console.log(findNTile(0.9, speed));
-    //});
 
     runDownloads();
 }());
