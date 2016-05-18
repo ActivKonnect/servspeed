@@ -131,7 +131,7 @@
     }
 
     function findNTile(position, array) {
-        var workArray = [].concat(array).sort();
+        var workArray = [].concat(array).sort(function(a, b) { return a - b; });
         return workArray[Math.min(array.length, Math.floor(position * array.length))];
     }
 
